@@ -12,7 +12,7 @@
         };
       in
       {
-        devShells.${system}.default = pkgs.mkShell {
+        devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             go
             gopls
