@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -17,7 +18,8 @@ const (
 )
 
 var (
-	portFlag = flag.String("port", "/dev/ttyACM0", "Serial port to read")
+	portFlag     = flag.String("port", "/dev/ttyACM0", "Serial port to read")
+	endpointFlag = flag.String("endpoint", "http://localhost:3000/readings", "Endpoint to PUT data")
 )
 
 func readCmd(port serial.Port, cmd string) (string, error) {
@@ -41,6 +43,27 @@ func readCmd(port serial.Port, cmd string) (string, error) {
 	return string(buffer), nil
 }
 
+func readCmdTimeout(port serial.Port, cmd string, seconds uint) (string, error) {
+	c1 := make(chan string, 1)
+	go func() {
+		res, err := readCmd(port, cmd)
+		if err != nil {
+			c1 <- ""
+		} else {
+			c1 <- res
+		}
+	}()
+
+	select {
+	case res := <-c1:
+		return res, nil
+	case <-time.After(10 * time.Second):
+		return "", errors.New("Timeout")
+	}
+}
+
+const CMD_TIMEOUT_SEC = 5
+
 func main() {
 	flag.Parse()
 
@@ -54,25 +77,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	amTemp, err := readCmd(port, AM2320_TEMP)
+	amTemp, err := readCmdTimeout(port, AM2320_TEMP, CMD_TIMEOUT_SEC)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("AM2320 Temp: %s\n", amTemp)
 
-	amHum, err := readCmd(port, AM2320_HUMIDITY)
+	amHum, err := readCmdTimeout(port, AM2320_HUMIDITY, CMD_TIMEOUT_SEC)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("AM2320 Humidity: %s\n", amHum)
 
-	dsTemp, err := readCmd(port, DS_TEMP)
+	dsTemp, err := readCmdTimeout(port, DS_TEMP, CMD_TIMEOUT_SEC)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("DS Temp: %s\n", dsTemp)
 
-	lux, err := readCmd(port, LUX_CMD)
+	lux, err := readCmdTimeout(port, LUX_CMD, CMD_TIMEOUT_SEC)
 	if err != nil {
 		log.Fatal(err)
 	}
