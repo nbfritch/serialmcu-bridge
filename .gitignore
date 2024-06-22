@@ -1,2 +1,7 @@
 main
 serialmcu-bridge
+
+
+# Added by cargo
+
+/target

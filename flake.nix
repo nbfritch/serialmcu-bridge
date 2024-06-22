@@ -14,8 +14,8 @@
       {
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
-            go
-            gopls
+            ruby
+            picocom
             python311
             python311Packages.pyserial
             bashInteractive
