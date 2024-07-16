@@ -1,25 +1,35 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
   };
-
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = (import nixpkgs) {
-          inherit system;
-        };
-      in
-      {
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            ruby
-            picocom
-            python311
-            python311Packages.pyserial
-            bashInteractive
-          ];
-        };
-      });
+  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
+    flake-utils.lib.eachDefaultSystem
+      (system:
+        let
+          overlays = [ (import rust-overlay) ];
+          pkgs = import nixpkgs {
+            inherit system overlays;
+          };
+          rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        in
+        with pkgs;
+        {
+          devShells.default = mkShell {
+            buildInputs = [
+              bashInteractive
+              rustToolchain
+              rust-analyzer
+            ];
+          };
+        }
+      );
 }
+

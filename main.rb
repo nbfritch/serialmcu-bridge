@@ -30,7 +30,7 @@ end
 
 def exec_cmd(cmd, port, verbose)
   if verbose
-    puts "echo -ne 'r#{cmd}\r' | picocom -qrx 1000 #{port}"
+    puts "echo -ne '\r#{cmd}\r' | picocom -qrx 1000 #{port}"
   end
   r = `echo -ne '\r#{cmd}\r' | picocom -qrx 1000 #{port}`
   if verbose
